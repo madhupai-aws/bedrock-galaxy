@@ -2,7 +2,7 @@
 
 An interactive 3D visualization of the entire Amazon Bedrock model catalog as a galaxy.
 
-**19 providers. 100+ models. 8 inference APIs.** Every beam is a real capability path.
+**18 providers. 100+ models. 8 inference APIs.** Every beam is a real capability path.
 
 ![Bedrock Galaxy](social-preview.png)
 
@@ -11,7 +11,7 @@ An interactive 3D visualization of the entire Amazon Bedrock model catalog as a 
 ## What you're looking at
 
 - **Center core** — Amazon Bedrock
-- **Orbiting suns** — each of the 19 model providers (Amazon, Anthropic, Meta, Mistral, Cohere, AI21, DeepSeek, Qwen, OpenAI, Google, NVIDIA, Stability, Writer, Z AI, MiniMax, Moonshot, Luma, TwelveLabs)
+- **Orbiting suns** — each of the 18 model providers (Amazon, Anthropic, Meta, Mistral, Cohere, AI21, DeepSeek, Qwen, OpenAI, Google, NVIDIA, Stability, Writer, Z AI, MiniMax, Moonshot, Luma, TwelveLabs)
 - **Small stars around each sun** — individual models in that provider's family
 - **Tilted inner ring** — the 8 inference API surfaces (InvokeModel, Converse, Mantle, Batch, Agents, AgentCore, Nova Sonic bidirectional, streaming)
 - **Pulsing beams** — which APIs actually support which providers
