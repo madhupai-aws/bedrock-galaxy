@@ -6,7 +6,7 @@ An interactive 3D visualization of the entire Amazon Bedrock model catalog as a 
 
 ![Bedrock Galaxy](social-preview.png)
 
-## 🚀 [Live demo →](https://YOUR-USERNAME.github.io/bedrock-galaxy/)
+## 🚀 [Live demo →](https://madhupai-aws.github.io/bedrock-galaxy/)
 
 ## What you're looking at
 
