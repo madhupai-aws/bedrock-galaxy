@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Amazon Bedrock — The Model Galaxy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #05060e;
+    --fg: #e6ecff;
+    --fg-dim: #9eb0d9;
+    --fg-dim2: #6b7aa0;
+    --accent: #7aaeff;
+    --line: rgba(170,200,255,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue', sans-serif;
+    overflow: hidden;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  canvas#scene {
+    display: block;
+    width: 100vw; height: 100vh;
+    cursor: grab;
+  }
+  canvas#scene:active { cursor: grabbing; }
+
+  /* Top-left brand */
+  .brand {
+    position: fixed; top: 24px; left: 28px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .brand .k {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--fg-dim2);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .brand .t {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--fg);
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .brand .t .dot {
+    display: inline-block;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 18px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+  .brand .s {
+    font-size: 12px;
+    color: var(--fg-dim);
+    margin-top: 4px;
+  }
+
+  /* Bottom stat strip */
+  .strip {
+    position: fixed; bottom: 24px; left: 28px;
+    z-index: 10;
+    display: flex; gap: 28px;
+    pointer-events: none;
+  }
+  .strip .s {
+    display: flex; flex-direction: column;
+  }
+  .strip .s .n {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+    background: linear-gradient(180deg, #fff 40%, #8fb6ff 120%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .strip .s .l {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--fg-dim2);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* Bottom-right hint / controls */
+  .hint {
+    position: fixed; bottom: 24px; right: 28px;
+    z-index: 10;
+    font-size: 11px;
+    color: var(--fg-dim2);
+    display: flex; gap: 18px; align-items: center;
+  }
+  .hint .kk {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .hint svg { width: 14px; height: 14px; opacity: 0.55; }
+  .hint button {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    color: var(--fg-dim);
+    font: inherit;
+    font-size: 11px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all .2s;
+  }
+  .hint button:hover {
+    background: rgba(122,174,255,0.14);
+    color: var(--fg);
+    border-color: rgba(122,174,255,0.4);
+  }
+
+  /* Top-right legend */
+  .legend {
+    position: fixed; top: 24px; right: 28px;
+    z-index: 10;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--fg-dim2);
+    text-align: right;
+    pointer-events: none;
+    max-width: 280px;
+  }
+  .legend .row { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 5px; font-size: 11px; text-transform: none; letter-spacing: 0; color: var(--fg-dim); }
+  .legend .sw { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* Info panel */
+  .info {
+    position: fixed;
+    top: 50%; right: -430px;
+    transform: translateY(-50%);
+    width: 400px;
+    max-height: 78vh;
+    background: rgba(8,12,24,0.85);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(122,174,255,0.3);
+    border-radius: 18px;
+    padding: 22px 22px 20px;
+    color: var(--fg);
+    z-index: 20;
+    transition: right .45s cubic-bezier(.2,.8,.2,1);
+    overflow-y: auto;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.5), 0 0 40px rgba(122,174,255,0.08);
+  }
+  .info.show { right: 24px; }
+  .info::-webkit-scrollbar { width: 6px; }
+  .info::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  #close-info {
+    position: absolute; top: 14px; right: 14px;
+    width: 28px; height: 28px;
+    border: none; background: transparent;
+    color: var(--fg-dim);
+    cursor: pointer; font-size: 16px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  #close-info:hover { background: rgba(255,255,255,0.08); color: var(--fg); }
+  #info-title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    margin-bottom: 4px;
+    padding-right: 30px;
+  }
+  #info-sub {
+    font-size: 12px;
+    color: var(--fg-dim);
+    margin-bottom: 16px;
+  }
+  .info-label {
+    font-size: 9.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--fg-dim2);
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+  .info-models, .info-prov, .info-apis {
+    display: flex; flex-wrap: wrap; gap: 5px 6px;
+  }
+  .im {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px;
+    padding: 3px 8px 3px 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    color: var(--fg);
+  }
+  .im .k {
+    width: 6px; height: 6px; border-radius: 50%;
+    display: inline-block;
+  }
+  .im .k-chat   { background: #7aaeff; }
+  .im .k-reason { background: #b48cff; box-shadow: 0 0 6px #b48cff; }
+  .im .k-speech { background: #4fd6e0; }
+  .im .k-embed  { background: #ff79b2; }
+  .im .k-image  { background: #ffb84d; }
+  .im .k-video  { background: #ff6a6a; }
+  .im .k-rerank { background: #c7c3b6; }
+  .im .flag { color: #ffd966; font-size: 9.5px; }
+  .im .cap {
+    font-size: 8.5px;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: rgba(122,174,255,0.18);
+    color: #9ecbff;
+    font-weight: 600;
+  }
+  .im .cap-V { background: rgba(93,214,160,0.18); color: #6fdba8; }
+  .im .cap-R { background: rgba(180,140,255,0.22); color: #c4a0ff; }
+  .im .cap-S { background: rgba(79,214,224,0.2); color: #7fe3ed; }
+  .im .cap-star { background: rgba(255,217,102,0.2); color: #ffd966; }
+
+  .ib, .ia {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--c, rgba(255,255,255,0.15));
+    color: var(--c, var(--fg));
+  }
+  .ib::before, .ia::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--c);
+  }
+
+  /* Loader */
+  .loader {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity .8s;
+  }
+  .loader .ring {
+    width: 50px; height: 50px;
+    border: 2px solid rgba(122,174,255,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader .t {
+    margin-top: 20px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--fg-dim2);
+  }
+
+  /* Vignette */
+  .vignette {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.6) 100%);
+    z-index: 5;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+<div class="vignette"></div>
+
+<div class="brand">
+  <div class="k">AWS · MARCH 2026</div>
+  <div class="t"><span class="dot"></span>Amazon Bedrock</div>
+  <div class="s">The model galaxy — mapped</div>
+</div>
+
+<div class="legend">
+  <div>Model types</div>
+  <div class="row"><span>Reasoning / extended thinking</span><span class="sw" style="background:#b48cff;box-shadow:0 0 6px #b48cff;"></span></div>
+  <div class="row"><span>Chat / multimodal</span><span class="sw" style="background:#7aaeff;"></span></div>
+  <div class="row"><span>Speech</span><span class="sw" style="background:#4fd6e0;"></span></div>
+  <div class="row"><span>Embeddings · Rerank</span><span class="sw" style="background:#ff79b2;"></span></div>
+  <div class="row"><span>Image · Video gen</span><span class="sw" style="background:#ffb84d;"></span></div>
+</div>
+
+<div class="strip">
+  <div class="s"><div class="n">19</div><div class="l">Providers</div></div>
+  <div class="s"><div class="n">100+</div><div class="l">Models</div></div>
+  <div class="s"><div class="n">8</div><div class="l">Inference APIs</div></div>
+</div>
+
+<div class="hint">
+  <span class="kk">drag to orbit</span>
+  <span class="kk">scroll to zoom</span>
+  <span class="kk">click any star</span>
+  <button id="replay">Replay intro</button>
+</div>
+
+<div class="info" id="info">
+  <button id="close-info" aria-label="close">×</button>
+  <div id="info-title">—</div>
+  <div id="info-sub">—</div>
+  <div id="info-body"></div>
+</div>
+
+<div class="loader" id="loader">
+  <div class="ring"></div>
+  <div class="t">Mapping the galaxy…</div>
+</div>
+
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="data.js"></script>
+<script src="galaxy.js"></script>
+</body>
+</html>
